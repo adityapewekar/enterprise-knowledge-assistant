@@ -1,0 +1,13 @@
+langchain_community
+OpenAI
+
+PyMuPDF
+dotenv
+
+langgraph
+chromadb
+langchain_openai
+
+uvicorn
+FastAPI
+python-multipart
