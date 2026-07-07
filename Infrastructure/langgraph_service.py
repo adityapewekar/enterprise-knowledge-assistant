@@ -6,7 +6,7 @@ from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import Tool
 from langchain_openai import ChatOpenAI
-from Infrastructure.mcp_service import mcp_tools
+from infrastructure.mcp_service import mcp_tools
 
 load_dotenv()
 
@@ -21,21 +21,23 @@ tools = [
         name="KBSearch",
         func=mcp_tools["KBSearch"].run,
         description=(
-            "Use this tool ONLY to search the internal company knowledge base. "
-            "It is restricted to company policies, HR guidelines, and internal documents. "
-            "Do NOT use it for general world knowledge, public figures, or external facts. "
-            "It returns {found, query, results, message}."
+            "Use this tool to search the internal company knowledge base for policies, guidelines, and conduct documents. "
+            "It first attempts an exact or semantic match using embeddings. If no exact match is found, it will provide "
+            "query-driven suggestions based on partial or lexical matches. Always return results in the format "
+            "{found, query, results, suggestions, message}. If 'found' is true, use the 'results' directly. "
+            "If 'found' is false but 'suggestions' are present, present them as possible alternatives."
         )
     ),
     Tool(
         name="DBFetch",
         func=mcp_tools["DBFetch"].run,
         description=(
-            "Use this tool ONLY to look up employee information in the company database. "
-            "It is restricted to internal employee records such as names and email addresses. "
-            "Do NOT use it for external people or public figures. "
-            "It returns {found, name, email}."
-        ),
+        "Use this tool to look up information from the correct table in the SQLite database. "
+        "For employee queries, use the 'employees' table. "
+        "For project lead queries, use the 'projects' table. "
+        "For department manager queries, use the 'departments' table. "
+        "It returns {found, source_table, name, email, message}."
+        )
     ),
     Tool(
         name="Fallback",
@@ -60,23 +62,44 @@ def run_agent(query):
         return {"error": "OpenAI API key is not configured."}
 
     try:
-        response = agent.invoke({"messages": [HumanMessage(content=query)]},
-                                    config={"configurable": {"session_id": str(uuid.uuid4())}})
+        response = agent.invoke(
+            {"messages": [HumanMessage(content=query)]},
+            config={"configurable": {"session_id": str(uuid.uuid4())}}
+        )
         print(f"Agent response: {response}")
+
+        # Ensure response is a dict
         messages = response.get("messages", []) if isinstance(response, dict) else []
         if messages:
             latest_answer = None
             for message in reversed(messages):
                 content = getattr(message, "content", None)
+
+                # Handle structured tool outputs (dicts with suggestions)
+                if isinstance(content, dict):
+                    # If tool returned suggestions
+                    if "suggestions" in content and content["suggestions"]:
+                        return {
+                            "response": content.get("message", "No exact match found."),
+                            "suggestions": content["suggestions"],
+                            "found": content.get("found", False),
+                            "query": content.get("query", query)
+                        }
+                    # Normal tool response
+                    return content
+
+                # Handle string content
                 if isinstance(content, list):
                     content = "\n".join(str(item) for item in content)
                 if isinstance(content, str) and content.strip():
                     if getattr(message, "type", None) == "ai" or getattr(message, "role", None) == "assistant":
                         latest_answer = content
                         break
+
             if latest_answer is not None:
                 return {"response": latest_answer}
 
+            # Fallback to last message content
             last_message = messages[-1]
             content = getattr(last_message, "content", None)
             if isinstance(content, list):
@@ -84,8 +107,11 @@ def run_agent(query):
             print(f"Last message content: {content}")
             print(f"response object: {response}")
             return {"response": content or str(last_message)}
+
         print(f"response object: {response}")
         return {"response": str(response)}
+
     except Exception as exc:
         print(exc)
         return {"error": f"Agent execution failed: {exc}"}
+

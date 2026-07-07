@@ -35,15 +35,27 @@ def fetch_users(name):
     conn = sqlite3.connect(DB_PATH)
     try:
         cursor = conn.cursor()
-        cursor.execute('SELECT name,email FROM users where name LIKE ?',
-    (f"%{name}%",))
+        cursor.execute('SELECT name,email FROM users where name = ?',(name,))
         result = cursor.fetchone()
         if result:
             name_value, email_value = result
             print(f"Fetched user: {name_value} -> {email_value}")
-            return {"found": True, "name": name_value, "email": email_value}
+            return {"found": True, "name": name_value, "email": email_value,
+                    "suggestions": [],
+                "message": "Exact match found"}
 
-        print("Fetched user: not found")
-        return {"found": False, "name": name, "email": None}
+        cursor.execute('SELECT name,email FROM users where name LIKE ? Limit 5',
+                       (f"%{name}%",))
+
+        suggestions= [row[0] for row in cursor.fetchall()]
+        if suggestions:
+            print(f"Suggestions found: {suggestions}")
+            return {"found": False, "name": None, "email": None,
+                    "suggestions": suggestions,
+                "message": "No exact match found, but suggestions are available."}
+
+        return {"found": False, "name": None, "email": None, "suggestions": [], "message": "User not found."}
+    except Exception as e:
+        print(f"Error occurred: {e}")
     finally:
         conn.close()

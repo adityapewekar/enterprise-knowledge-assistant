@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile
-from Infrastructure.langgraph_service import run_agent
-from Infrastructure.file_service import parse_doc
-from Domain.models.AskRequest import AskRequest
+from infrastructure.langgraph_service import run_agent
+from infrastructure.file_service import parse_doc
+from domain.models.ask_request import AskRequest
 
 router = APIRouter()
 

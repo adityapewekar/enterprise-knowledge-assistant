@@ -59,33 +59,44 @@ def search_kb(query):
         return {"found": False, "query": query, "results": None, "message": "Knowledge base is unavailable because OpenAI credentials are not configured."}
 
     query_embedding = embedding_model.embed_query(query)
-    similarity_results = db.similarity_search_by_vector(query_embedding, k=3)
+    similarity_results = db.similarity_search_by_vector(query_embedding, k=5)
     print(f"Similarity search results: {similarity_results}")
     similarity_content = [result.page_content for result in similarity_results if getattr(result, "page_content", None)]
 
     if similarity_content:
         similarity_scored = [(_score_document(query, text), text) for text in similarity_content]
         similarity_scored.sort(key=lambda item: item[0], reverse=True)
-        best_result = similarity_scored[0][1] if similarity_scored else None
-        print(f"Best similarity result: {best_result}")
-        if best_result:
-            return {
-                "found": True,
-                "query": query,
-                "results": best_result,
-                "message": "Knowledge base lookup completed.",
-            }
+        print(f"Scored similarity results: {similarity_scored}")
+        exact_matches = [text for score, text in similarity_scored if score == 100]
+        # If top score is strong (exact match), return it
+        print(f"Exact matches found: {exact_matches}")
+        if exact_matches:
+            if len(exact_matches) == 1:            
+                return {
+                    "found": True,
+                    "query": query,
+                    "results": similarity_scored[0][1],
+                    "suggestions": [],
+                    "message": "Exact match found."
+                }
+            else:
+            # Multiple exact matches → return as suggestions
+                return {
+                    "found": False,
+                    "query": query,
+                    "results": None,
+                    "suggestions": exact_matches,
+                    "message": "Multiple exact matches found. Suggestions provided."
+                }
 
-    lexical_results = []
-    for document_text in docs:
-        lexical_results.append((_score_document(query, document_text), document_text))
-    lexical_results.sort(key=lambda item: item[0], reverse=True)
-    fallback_result = lexical_results[0][1] if lexical_results else None
-    print(f"Fallback result: {fallback_result}")
-
-    return {
-        "found": bool(fallback_result),
-        "query": query,
-        "results": fallback_result,
-        "message": "Knowledge base lookup completed." if fallback_result else "No relevant knowledge base result was found.",
-    }
+   # Otherwise, treat as broad query → return suggestions
+    suggestions = [text for score, text in similarity_scored if score > 0]
+    print(f"Suggestions based on query: {suggestions}")
+    if suggestions:
+        return {
+            "found": False,
+            "query": query,
+            "results": None,
+            "suggestions": suggestions,
+            "message": "No exact match found. Suggestions based on query provided." if suggestions else "No relevant KB result."
+        }
