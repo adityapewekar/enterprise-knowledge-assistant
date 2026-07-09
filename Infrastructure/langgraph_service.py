@@ -4,8 +4,9 @@ import uuid
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
-from langchain_core.tools import Tool
+from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
+from domain.models.agent_context import AgentContext
 from infrastructure.mcp_service import mcp_tools
 
 load_dotenv()
@@ -17,7 +18,7 @@ def fallback_tool(query):
     }
 
 tools = [
-    Tool(
+    StructuredTool.from_function(
         name="KBSearch",
         func=mcp_tools["KBSearch"].run,
         description=(
@@ -28,18 +29,17 @@ tools = [
             "If 'found' is false but 'suggestions' are present, present them as possible alternatives."
         )
     ),
-    Tool(
+    StructuredTool.from_function(
         name="DBFetch",
         func=mcp_tools["DBFetch"].run,
         description=(
-        "Use this tool to look up information from the correct table in the SQLite database. "
-        "For employee queries, use the 'employees' table. "
-        "For project lead queries, use the 'projects' table. "
-        "For department manager queries, use the 'departments' table. "
-        "It returns {found, source_table, name, email, message}."
+            "Use this tool to look up structured information from the SQLite database. "
+            "For standard user lookups, call it with {name, role, intent:'user'}. "
+            "For salary or compensation questions, call it with {name, role, intent:'salary'}. "
+            "The tool handles the authorization boundary and returns a response such as {found, name, email, compensation, message}."
         )
     ),
-    Tool(
+    StructuredTool.from_function(
         name="Fallback",
         func=fallback_tool,
         description=(
@@ -49,22 +49,23 @@ tools = [
         ),
     )
 ]
-
 agent = None
 if os.getenv("OPENAI_API_KEY"):
     llm = ChatOpenAI(model="gpt-4", temperature=0)
-    agent = create_agent(model=llm, tools=tools)
+    agent = create_agent(model=llm, tools=tools,context_schema=AgentContext
+)
 
+def run_agent(query, role="guest"):
+    print(f"Running agent for query: {query} with role: {role}")
 
-def run_agent(query):
-    print(f"Running agent for query: {query}")
     if agent is None:
         return {"error": "OpenAI API key is not configured."}
 
     try:
         response = agent.invoke(
             {"messages": [HumanMessage(content=query)]},
-            config={"configurable": {"session_id": str(uuid.uuid4())}}
+            config={"configurable": {"session_id": str(uuid.uuid4())}},
+            context=AgentContext(role=role)
         )
         print(f"Agent response: {response}")
 
