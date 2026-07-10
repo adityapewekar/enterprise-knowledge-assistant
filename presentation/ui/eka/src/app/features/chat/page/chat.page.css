@@ -1,0 +1,169 @@
+/* Layout container */
+.chat-container {
+  width: 700px;
+  margin: 40px auto;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Message area */
+.messages {
+  border: 1px solid #d0d7de;
+  border-radius: 12px;
+  height: 420px;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f9fafb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Chat bubbles */
+.user {
+  text-align: right;
+}
+
+.user p {
+  display: inline-block;
+  background: #0078d4;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 16px 16px 0 16px;
+  margin: 6px 0;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.assistant {
+  text-align: left;
+}
+
+.assistant p {
+  display: inline-block;
+  background: #e8ebed;
+  color: #333;
+  padding: 10px 14px;
+  border-radius: 16px 16px 16px 0;
+  margin: 6px 0;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+/* Input area */
+.input-area {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-area input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.input-area input:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 4px rgba(0, 120, 212, 0.3);
+}
+
+.input-area button {
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.input-area button:hover {
+  background: #005a9e;
+}
+
+/* KB update section */
+.kb-update {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.kb-update textarea {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+
+.kb-update textarea:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 4px rgba(0, 120, 212, 0.3);
+}
+
+.kb-update button {
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.kb-update button:hover {
+  background: #005a9e;
+}
+
+/* Scrollbar styling */
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* Dropdown styling */
+.input-area select {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #f9fafb;
+  color: #333;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus effect */
+.input-area select:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 4px rgba(0, 120, 212, 0.3);
+}
+
+/* Option styling (limited by browser support) */
+.input-area select option {
+  padding: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+}
+
+/* Hover effect for options (works in most modern browsers) */
+.input-area select option:hover {
+  background: #e8ebed;
+  color: #0078d4;
+}

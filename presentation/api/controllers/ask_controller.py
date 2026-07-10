@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Header, UploadFile
 from infrastructure.langgraph_service import run_agent
 from infrastructure.file_service import parse_doc
-from domain.models.ask_request import AskRequest
+from presentation.api.request_dtos.ask_request_dto import AskRequestDto
 
 router = APIRouter()
 
 
 @router.post("/ask")
-def ask(request: AskRequest, role: Annotated[str | None, Header(alias="x-role")] = None):
+def ask(request: AskRequestDto, role: Annotated[str | None, Header(alias="x-role")] = None):
     print(f"Received query: {request.query}")
 
     effective_role = request.role or role or "guest"
