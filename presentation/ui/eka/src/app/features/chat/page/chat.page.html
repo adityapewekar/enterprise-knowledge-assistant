@@ -7,16 +7,38 @@
   </div>
 
   <div class="input-area">
-    <select [(ngModel)]="selectedRole">
-      <option value="employee">Employee</option>
-      <option value="admin">Admin</option>
-    </select>
-    <input [(ngModel)]="userInput" placeholder="Ask Me..." />
-    <button (click)="sendMessage()">Send</button>
+
+<mat-form-field appearance="outline">
+  <mat-label>Select Role</mat-label>
+  <mat-select [(value)]="selectedRole">
+    <mat-option *ngFor="let role of roles" [value]="role">
+      {{ role }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
+     <mat-form-field appearance="outline" class="input-textarea">
+    <mat-label>Ask Me...</mat-label>
+    <input matInput [(ngModel)]="userInput"/>
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="sendMessage()">Send</button>
+ 
   </div>
 
   <div class="kb-update">
-    <textarea [(ngModel)]="KbUpdate" placeholder="Update KB article..."></textarea>
-    <button (click)="updateKB()">Update KB</button>
+<mat-form-field appearance="outline">
+  <mat-label>Select Roles</mat-label>
+  <mat-select [(value)]="selectedRoleKB" multiple>
+    <mat-option *ngFor="let role of roles" [value]="role">
+      {{ role }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
+  <mat-form-field appearance="outline" class="kb-textarea">
+    <mat-label>Update KB article</mat-label>
+    <textarea matInput [(ngModel)]="KbUpdate"></textarea>
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="updateKB()">Update KB</button>
   </div>
 </div>

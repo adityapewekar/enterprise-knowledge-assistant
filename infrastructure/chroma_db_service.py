@@ -49,17 +49,18 @@ db = Chroma(
     collection_name="eka_kb_docs",
     persist_directory="./chroma_db"
 )
-db.delete_collection()
 
-if embedding_model:
+collection = db._collection
+
+print(f"Chroma DB initialized. Document count: {collection.count()}")
+
+if embedding_model and collection.count() == 0:
     db = Chroma.from_documents(
         documents=document_objects,
         embedding=embedding_model,
         collection_name="eka_kb_docs",
         persist_directory="./chroma_db"
     )
-else:
-    db = None
 
 
 def _score_document(query, text):
@@ -123,3 +124,14 @@ def search_kb(query,role="guest"):
             "suggestions": suggestions,
             "message": "No exact match found. Suggestions based on query provided." if suggestions else "No relevant KB result."
         }
+
+def update_kb_article(request):
+    if not client or not db:
+        return {"success": False, "message": "Knowledge base is unavailable because OpenAI credentials are not configured."}
+
+    new_doc = Document(
+        page_content=request.article,
+        metadata={"roles": request.roles}
+    )
+    db.add_documents([new_doc])
+    return {"success": True, "message": "Knowledge base updated successfully."}

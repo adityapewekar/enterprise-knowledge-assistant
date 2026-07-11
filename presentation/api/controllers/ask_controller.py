@@ -5,10 +5,10 @@ from infrastructure.langgraph_service import run_agent
 from infrastructure.file_service import parse_doc
 from presentation.api.request_dtos.ask_request_dto import AskRequestDto
 
-router = APIRouter()
+ask_router = APIRouter()
 
 
-@router.post("/ask")
+@ask_router.post("/ask")
 def ask(request: AskRequestDto, role: Annotated[str | None, Header(alias="x-role")] = None):
     print(f"Received query: {request.query}")
 
@@ -20,7 +20,7 @@ def ask(request: AskRequestDto, role: Annotated[str | None, Header(alias="x-role
     return result
 
 
-@router.post("/upload_doc")
+@ask_router.post("/upload_doc")
 async def upload_doc(file: UploadFile):
     text = parse_doc(file)
     return {"parsed_text": text[:500]}
