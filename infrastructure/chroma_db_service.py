@@ -1,3 +1,4 @@
+from difflib import SequenceMatcher
 import os
 import re
 
@@ -6,6 +7,8 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
+
+from fuzzywuzzy import fuzz
 
 load_dotenv()
 
@@ -64,16 +67,7 @@ if embedding_model and collection.count() == 0:
 
 
 def _score_document(query, text):
-    normalized_query = query.lower()
-    lowered_text = text.lower()
-
-    if normalized_query in lowered_text:
-        return 100
-
-    query_terms = set(re.findall(r"[a-z0-9]+", normalized_query))
-    text_terms = set(re.findall(r"[a-z0-9]+", lowered_text))
-    overlap = len(query_terms.intersection(text_terms))
-    return overlap
+    return fuzz.partial_ratio(query.lower(), text.lower())
 
 
 def search_kb(query,role="guest"):
@@ -91,7 +85,7 @@ def search_kb(query,role="guest"):
         similarity_scored = [(_score_document(query, text), text) for text in similarity_content]
         similarity_scored.sort(key=lambda item: item[0], reverse=True)
         print(f"Scored similarity results: {similarity_scored}")
-        exact_matches = [text for score, text in similarity_scored if score == 100]
+        exact_matches = [text for score, text in similarity_scored if score > 70]
         # If top score is strong (exact match), return it
         print(f"Exact matches found: {exact_matches}")
         if exact_matches:

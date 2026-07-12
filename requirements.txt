@@ -11,3 +11,5 @@ langchain_openai
 uvicorn
 FastAPI
 python-multipart
+
+fuzzywuzzy
