@@ -8,6 +8,7 @@ from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from domain.models.agent_context import AgentContext
 from infrastructure.mcp_service import mcp_tools
+from application.decorators import cached
 
 load_dotenv()
 
@@ -55,6 +56,7 @@ if os.getenv("OPENAI_API_KEY"):
     agent = create_agent(model=llm, tools=tools,context_schema=AgentContext
 )
 
+@cached(ttl_seconds=120, maxsize=100)
 def run_agent(query, role="guest"):
     print(f"Running agent for query: {query} with role: {role}")
 

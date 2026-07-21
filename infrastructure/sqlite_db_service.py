@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from application.decorators import require_role
+from application.decorators import cached, require_role
 
 DB_PATH = Path(__file__).resolve().parent.parent / "eka.db"
 
@@ -69,6 +69,7 @@ def db_router(query=None, **kwargs):
     return handlers.get(intent, handlers["user"])()
 
 
+@cached(ttl_seconds=300, maxsize=100)
 @require_role('admin', 'employee')
 def fetch_users(name, role="guest"):
     print(f"Fetching user with name: {name}")
@@ -108,6 +109,7 @@ def fetch_users(name, role="guest"):
         conn.close()
 
 
+@cached(ttl_seconds=300, maxsize=100)
 @require_role('admin')
 def fetch_users_salary(name, role="guest"):
     print(f"Fetching user with name: {name}")

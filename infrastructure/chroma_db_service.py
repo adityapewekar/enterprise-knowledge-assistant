@@ -10,6 +10,8 @@ from openai import OpenAI
 
 from fuzzywuzzy import fuzz
 
+from application.decorators import cached
+
 load_dotenv()
 
 document_objects = [
@@ -70,10 +72,11 @@ def _score_document(query, text):
     return fuzz.partial_ratio(query.lower(), text.lower())
 
 
-def search_kb(query,role="guest"):
+@cached(ttl_seconds=300, maxsize=200)
+def search_kb(query, role="guest"):
     print(f"Searching knowledge base for query: {query}")
     if not client or not db:
-        return {"found": False, "query": query, "results": None, "message": "Knowledge base is unavailable because OpenAI credentials are not configured."}
+        return {"found": False, "query": query, "results": None, "suggestions": [], "message": "Knowledge base is unavailable because OpenAI credentials are not configured."}
 
     query_embedding = embedding_model.embed_query(query)
     similarity_results = db.similarity_search_by_vector(query_embedding, k=5)
@@ -81,15 +84,15 @@ def search_kb(query,role="guest"):
     similarity_results = [doc for doc in similarity_results if role in doc.metadata.get("roles", [])]
     similarity_content = [result.page_content for result in similarity_results if getattr(result, "page_content", None)]
 
+    similarity_scored = []
     if similarity_content:
         similarity_scored = [(_score_document(query, text), text) for text in similarity_content]
         similarity_scored.sort(key=lambda item: item[0], reverse=True)
         print(f"Scored similarity results: {similarity_scored}")
         exact_matches = [text for score, text in similarity_scored if score > 70]
-        # If top score is strong (exact match), return it
         print(f"Exact matches found: {exact_matches}")
         if exact_matches:
-            if len(exact_matches) == 1:            
+            if len(exact_matches) == 1:
                 return {
                     "found": True,
                     "query": query,
@@ -97,17 +100,14 @@ def search_kb(query,role="guest"):
                     "suggestions": [],
                     "message": "Exact match found."
                 }
-            else:
-            # Multiple exact matches → return as suggestions
-                return {
-                    "found": False,
-                    "query": query,
-                    "results": None,
-                    "suggestions": exact_matches,
-                    "message": "Multiple exact matches found. Suggestions provided."
-                }
+            return {
+                "found": False,
+                "query": query,
+                "results": None,
+                "suggestions": exact_matches,
+                "message": "Multiple exact matches found. Suggestions provided."
+            }
 
-   # Otherwise, treat as broad query → return suggestions
     suggestions = [text for score, text in similarity_scored if score > 0]
     print(f"Suggestions based on query: {suggestions}")
     if suggestions:
