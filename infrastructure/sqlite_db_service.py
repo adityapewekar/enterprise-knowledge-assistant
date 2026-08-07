@@ -44,10 +44,27 @@ def _init_db():
                 (3, 120000, 20000)
             """
         )
+
+        conn.execute("DROP TABLE IF EXISTS user_payment_details")
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS user_payment_details (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                bank_account TEXT NOT NULL,
+                card_number TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )"""
+        )
+        conn.execute(
+            """INSERT INTO user_payment_details (user_id, bank_account, card_number) VALUES
+                (1, '123456789', '4111 1111 1111 1111'),
+                (2, '987654321', '5555 5555 5555 4444'),
+                (3, '456789123', '4242 4242 4242 4242')
+            """
+        )
         conn.commit()
     finally:
         conn.close()
-
 
 _init_db()
 
@@ -64,6 +81,7 @@ def db_router(query=None, **kwargs):
 
     handlers = {
         "salary": lambda: fetch_users_salary(name=name, role=role),
+        "payment": lambda: fetch_users_payment(name=name, role=role),
         "user": lambda: fetch_users(name=name, role=role),
     }
     return handlers.get(intent, handlers["user"])()
@@ -108,7 +126,6 @@ def fetch_users(name, role="guest"):
     finally:
         conn.close()
 
-
 @cached(ttl_seconds=300, maxsize=100)
 @require_role('admin')
 def fetch_users_salary(name, role="guest"):
@@ -138,6 +155,42 @@ def fetch_users_salary(name, role="guest"):
             "name": name,
             "compensation": None,
             "message": "No compensation record found.",
+            "authorized": True,
+        }
+    except Exception as e:
+        print(f"Error occurred: {e}")
+    finally:
+        conn.close()
+
+@cached(ttl_seconds=300, maxsize=100)
+@require_role('admin')
+def fetch_users_payment(name, role="guest"):
+    print(f"Fetching user with name: {name}")
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT u.name, pd.bank_account, pd.card_number
+                FROM users u
+                JOIN user_payment_details pd ON u.id = pd.user_id
+                WHERE u.name = ?""",
+            (name,)
+        )
+        result = cursor.fetchone()
+        if result:
+            name_value, bank_account, card_number = result
+            return {
+                "found": True,
+                "name": name_value,
+                "payment_details": {"bank_account": bank_account, "card_number": card_number},
+                "message": "Payment details retrieved successfully.",
+                "authorized": True,
+            }
+        return {
+            "found": False,
+            "name": name,
+            "payment_details": None,
+            "message": "No payment details found.",
             "authorized": True,
         }
     except Exception as e:

@@ -3,6 +3,8 @@ import uuid
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain.agents.middleware import PIIMiddleware
+
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
@@ -37,7 +39,8 @@ tools = [
             "Use this tool to look up structured information from the SQLite database. "
             "For standard user lookups, call it with {name, role, intent:'user'}. "
             "For salary or compensation questions, call it with {name, role, intent:'salary'}. "
-            "The tool handles the authorization boundary and returns a response such as {found, name, email, compensation, message}."
+            "For payment details or bank details questions, call it with {name, role, intent:'payment'}. "
+            "The tool handles the authorization boundary and returns a response such as {found, name, email, compensation, payment_details, message}."
         )
     ),
     StructuredTool.from_function(
@@ -53,8 +56,18 @@ tools = [
 agent = None
 if os.getenv("OPENAI_API_KEY"):
     llm = ChatOpenAI(model="gpt-4", temperature=0)
-    agent = create_agent(model=llm, tools=tools,context_schema=AgentContext
-)
+    agent = create_agent(model=llm, 
+                         tools=tools,
+                         context_schema=AgentContext,
+                        middleware=[
+                            PIIMiddleware(
+                                "credit_card",
+                                strategy="mask",
+                                apply_to_input=True,
+                                apply_to_output=True,
+                            ),
+                        ]
+                        )
 
 @cached(ttl_seconds=120, maxsize=100)
 def run_agent(query, role="guest"):
