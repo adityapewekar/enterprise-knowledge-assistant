@@ -9,10 +9,14 @@ from langchain_core.messages import HumanMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from domain.models.agent_context import AgentContext
+from infrastructure.azure_service import get_kv_secret
 from infrastructure.mcp_service import mcp_tools
+from infrastructure.token_service import MAX_RESPONSE_TOKENS, num_tokens_from_query, validate_token_usage
 from application.decorators import cached
 
 load_dotenv()
+
+MODEL = "gpt-4o"
 
 def fallback_tool(query):
     return {
@@ -54,11 +58,14 @@ tools = [
     )
 ]
 agent = None
-if os.getenv("OPENAI_API_KEY"):
-    llm = ChatOpenAI(model="gpt-4", temperature=0)
-    agent = create_agent(model=llm, 
-                         tools=tools,
-                         context_schema=AgentContext,
+# openai_api_key = os.getenv("OPENAI_API_KEY") or get_kv_secret("OPENAI_API_KEY") or os.getenv("OPENAI-API-KEY") or get_kv_secret("OPENAI-API-KEY")
+openai_api_key = get_kv_secret("OPENAI-API-KEY")
+
+if openai_api_key:
+    llm = ChatOpenAI(model=MODEL, temperature=0, max_tokens=MAX_RESPONSE_TOKENS, openai_api_key=openai_api_key)
+    agent = create_agent(model=llm,
+                        tools=tools,
+                        context_schema=AgentContext,
                         middleware=[
                             PIIMiddleware(
                                 "credit_card",
@@ -75,6 +82,8 @@ def run_agent(query, role="guest"):
 
     if agent is None:
         return {"error": "OpenAI API key is not configured."}
+
+    validate_token_usage(query, MODEL)
 
     try:
         response = agent.invoke(

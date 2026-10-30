@@ -1,5 +1,6 @@
 langchain_community
 OpenAI
+tiktoken
 
 PyMuPDF
 dotenv
@@ -13,3 +14,6 @@ FastAPI
 python-multipart
 
 fuzzywuzzy
+
+azure.identity
+azure.keyvault

@@ -11,6 +11,7 @@ from openai import OpenAI
 from fuzzywuzzy import fuzz
 
 from application.decorators import cached
+from infrastructure.azure_service import get_kv_secret
 
 load_dotenv()
 
@@ -45,27 +46,33 @@ document_objects = [
     )
 ]
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or get_kv_secret("OPENAI_API_KEY") or os.getenv("OPENAI-API-KEY") or get_kv_secret("OPENAI-API-KEY")
+OPENAI_API_KEY = get_kv_secret("OPENAI-API-KEY")
+
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 embedding_model = OpenAIEmbeddings(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-db = Chroma(
-    embedding_function=embedding_model,
-    collection_name="eka_kb_docs",
-    persist_directory="./chroma_db"
-)
+db = None
+collection = None
 
-collection = db._collection
-
-print(f"Chroma DB initialized. Document count: {collection.count()}")
-
-if embedding_model and collection.count() == 0:
-    db = Chroma.from_documents(
-        documents=document_objects,
-        embedding=embedding_model,
+if embedding_model:
+    db = Chroma(
+        embedding_function=embedding_model,
         collection_name="eka_kb_docs",
         persist_directory="./chroma_db"
     )
+    collection = db._collection
+    print(f"Chroma DB initialized. Document count: {collection.count()}")
+
+    if collection.count() == 0:
+        db = Chroma.from_documents(
+            documents=document_objects,
+            embedding=embedding_model,
+            collection_name="eka_kb_docs",
+            persist_directory="./chroma_db"
+        )
+else:
+    print("Chroma DB not initialized because no OpenAI API key is configured.")
 
 
 def _score_document(query, text):
