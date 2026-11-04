@@ -39,7 +39,7 @@ export class ChatPage {
     
     this.messages.update(msg => [...msg, { role: 'user', content: userMessage }]);
 
-    this.askService.sendMessage(userMessage,this.selectedRole).subscribe(res=>{
+    this.askService.sendMessage(userMessage, this.selectedRole).subscribe(res=>{
       this.messages.update(msg => [...msg, { role: 'assistant', content: res.response }]);
     });
 
@@ -55,4 +55,3 @@ export class ChatPage {
     });
   }
 }
-

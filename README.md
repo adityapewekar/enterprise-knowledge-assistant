@@ -15,6 +15,7 @@ An intelligent knowledge management system that leverages OpenAI and LangGraph t
 - **Token Management**: Track, monitor, and control OpenAI API token usage and costs
 - **Usage Limits**: Set daily, monthly, and cost-based limits per user role
 - **Analytics Dashboard**: Comprehensive token usage statistics and trends
+- **Multilingual Q&A**: Automatically detect the language of a question and answer in that same language
 
 ## Prerequisites
 
@@ -591,9 +592,14 @@ curl -X POST "http://localhost:8000/kb/upload" \
 curl -X POST "http://localhost:8000/ask" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What is the company policy on remote work?"
+    "query": "दूरस्थ कामाबाबत कंपनीचे धोरण काय आहे?"
   }'
 ```
+
+The assistant automatically detects the question's language and responds in that
+language. This applies to any language supported by the model, including Marathi;
+no language selection or language code is required. Knowledge-base content may be
+translated in the response as needed.
 
 **Check Knowledge Base Status**:
 ```bash
@@ -703,7 +709,7 @@ For issues and questions:
 - [ ] Add support for additional document formats (DOCX, TXT)
 - [ ] Implement document management UI
 - [ ] Add conversation history and context management
-- [ ] Multi-language support
+- [x] Multi-language support
 - [ ] Advanced analytics and usage metrics
 - [ ] Docker containerization
 - [ ] CI/CD pipeline setup

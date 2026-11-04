@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.agents.middleware import PIIMiddleware
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from domain.models.agent_context import AgentContext
@@ -32,7 +32,8 @@ tools = [
             "Use this tool to search the internal company knowledge base for policies, guidelines, and conduct documents. "
             "It first attempts an exact or semantic match using embeddings. If no exact match is found, it will provide "
             "query-driven suggestions based on partial or lexical matches. Always return results in the format "
-            "{found, query, results, suggestions, message}. If 'found' is true, use the 'results' directly. "
+            "{found, query, results, suggestions, message}. Treat the results and suggestions as source material, "
+            "then explain them to the user in the language of their question. "
             "If 'found' is false but 'suggestions' are present, present them as possible alternatives."
         )
     ),
@@ -87,7 +88,19 @@ def run_agent(query, role="guest"):
 
     try:
         response = agent.invoke(
-            {"messages": [HumanMessage(content=query)]},
+            {
+                "messages": [
+                    SystemMessage(content=(
+                        "Detect the language the user is asking in and always answer in that same language, "
+                        "using its natural vocabulary and script. This applies to every language,"
+                        "even if the knowledge-base or database sources are written in another language. "
+                        "Translate and explain source material as needed; do not switch to English unless the "
+                        "question is in English. If the question mixes languages, answer in the language of its "
+                        "main request. Preserve names, numbers, and factual meaning, and do not invent information."
+                    )),
+                    HumanMessage(content=query),
+                ]
+            },
             config={"configurable": {"session_id": str(uuid.uuid4())}},
             context=AgentContext(role=role)
         )
@@ -139,4 +152,3 @@ def run_agent(query, role="guest"):
     except Exception as exc:
         print(exc)
         return {"error": f"Agent execution failed: {exc}"}
-

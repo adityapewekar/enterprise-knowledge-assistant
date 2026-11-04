@@ -10,7 +10,7 @@ export class ChatService{
 
     constructor(private http: HttpClient) {}
 
-    sendMessage(message: string,role:string):Observable<any> {
+    sendMessage(message: string, role: string):Observable<any> {
         const headers = new HttpHeaders({'Content-Type': 'application/json','x-role': role});
         return this.http.post(this.apiUrl+"ask", { "query": message }, { headers });
     }
