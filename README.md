@@ -112,6 +112,7 @@ LOG_LEVEL=INFO
 ```
 
 **Important**: Never commit the `.env` file to version control. It's already in `.gitignore`.
+These backend Azure settings are separate from the Microsoft Entra configuration used by the Angular sign-in flow.
 
 ### Frontend Setup (Angular)
 
@@ -131,28 +132,30 @@ This will install all required packages including:
 - Angular 21 framework
 - Angular Material (UI components)
 - Angular CDK (Component Development Kit)
+- MSAL Angular and MSAL Browser (Microsoft Entra ID authentication)
 - RxJS (reactive programming)
 - TypeScript
 
-#### 3. Configure Backend URL (Optional)
+#### 3. Configure the Frontend and Authentication
 
-If your backend runs on a different port or host, update the API configuration in the Angular environment files:
+Edit `src/app/environment.ts` in the Angular project:
 
-**File**: `src/environments/environment.ts`
 ```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8000'  // Update if backend runs on different port
-};
+export class AZURE_CONFIG {
+  static TENANT_ID: string = '<your-tenant-id>';
+  static CLIENT_ID: string = '<your-application-client-id>';
+}
+
+export class API_CONFIG {
+  static BASE_URL: string = 'http://127.0.0.1:8000/';
+}
 ```
 
-**File**: `src/environments/environment.prod.ts`
-```typescript
-export const environment = {
-  production: true,
-  apiUrl: 'https://api.yourdomain.com'  // Production API URL
-};
-```
+Register the Angular app as a **Single-page application (SPA)** in Microsoft Entra ID and add `http://localhost:4200` as a redirect URI. The same URI is currently configured for redirect and post-logout in `src/app/core/auth/msal.service.ts`; update those values and the Entra registration together when deploying to another origin. Grant the app the delegated Microsoft Graph `User.Read` permission and consent to it.
+
+The chat route is protected by MSAL. Opening the frontend redirects unauthenticated users to Microsoft sign-in, then returns them to the app. Passwords are entered on Microsoft's sign-in page; this Angular app does not collect or store passwords. Authentication failures navigate to `/login-failed`.
+
+The frontend API base URL is `API_CONFIG.BASE_URL`. Update it in `src/app/environment.ts` if the FastAPI backend runs on a different host or port.
 
 ## Build and Run
 
@@ -271,9 +274,10 @@ enterprise-knowledge-assistant/
 │   └── ui/                        # Angular Frontend Application
 │       └── eka/                   # Angular Project
 │           ├── src/               # Angular source code
-│           │   ├── app/           # Angular components & services
-│           │   ├── assets/        # Static assets
-│           │   ├── environments/  # Environment configuration
+│           │   ├── app/
+│           │   │   ├── core/auth/ # MSAL configuration
+│           │   │   ├── features/  # Chat and login-failure pages
+│           │   │   └── environment.ts # API and Entra app configuration
 │           │   └── main.ts        # Angular entry point
 │           ├── public/            # Public assets
 │           ├── angular.json       # Angular CLI configuration
@@ -433,7 +437,10 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ng serve --port 4300
 ```
 
-Then update the backend CORS configuration to accept the new port.
+Then update the backend CORS configuration and the MSAL redirect URI / Entra SPA redirect registration to use the new port.
+
+#### Issue: Microsoft sign-in does not return to the app
+**Solution**: Confirm the Entra app registration contains the exact frontend redirect URI configured in `src/app/core/auth/msal.service.ts`, and that `TENANT_ID` and `CLIENT_ID` in `src/app/environment.ts` belong to that app. Also verify the delegated Microsoft Graph `User.Read` permission has been granted. Authentication failures are routed to `/login-failed`.
 
 #### Issue: CORS Error ("Access to XMLHttpRequest has been blocked")
 **Solution 1**: Update `main.py` backend:
@@ -534,23 +541,9 @@ The optimized build will be in `dist/eka/` and ready for deployment to:
 - Nginx/Apache web servers
 - Cloud CDN services
 
-### Environment Files for Angular
+### Angular Configuration
 
-**Development** (`src/environments/environment.ts`):
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8000'
-};
-```
-
-**Production** (`src/environments/environment.prod.ts`):
-```typescript
-export const environment = {
-  production: true,
-  apiUrl: 'https://api.production.domain.com'
-};
-```
+The current Angular app keeps its API base URL, Entra tenant ID, and client ID in `src/app/environment.ts`. MSAL redirect and post-logout URLs are configured in `src/app/core/auth/msal.service.ts`. Set all of these values for the target environment before building or deploying; the checked-in redirect URLs currently target local development.
 
 ## Usage
 
@@ -558,7 +551,7 @@ export const environment = {
 
 1. **Access the Application**:
    - Navigate to `http://localhost:4200` in your browser
-   - The Angular Material UI will load with the knowledge assistant interface
+   - Sign in on the Microsoft page when prompted; after successful sign-in, the protected chat page opens
 
 2. **Upload Documents**:
    - Click on the "Upload" or "Knowledge Base" section

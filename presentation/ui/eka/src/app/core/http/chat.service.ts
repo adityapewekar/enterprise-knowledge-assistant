@@ -1,12 +1,13 @@
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
+import { API_CONFIG } from "../../environment";
 
 @Injectable({
     providedIn: 'root'
 })
 export class ChatService{
-    private apiUrl:string = 'http://127.0.0.1:8000/';
+    private apiUrl:string = API_CONFIG.BASE_URL;
 
     constructor(private http: HttpClient) {}
 
