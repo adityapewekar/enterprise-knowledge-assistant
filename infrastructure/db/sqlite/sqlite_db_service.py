@@ -1,3 +1,4 @@
+from contextlib import closing
 import sqlite3
 from pathlib import Path
 
@@ -7,62 +8,62 @@ DB_PATH = Path(__file__).resolve().parent.parent / "eka.db"
 
 
 def _init_db():
-    conn = sqlite3.connect(DB_PATH)
     try:
-        # Drop and recreate users table
-        conn.execute("DROP TABLE IF EXISTS users")
-        conn.execute(
-            """CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL
-            )"""
-        )
-        conn.execute(
-            """INSERT INTO users (name, email) VALUES
-                ('John Doe', 'john.doe@example.com'),
-                ('Jane Smith', 'jane.smith@example.com'),
-                ('Alice Johnson', 'alice.johnson@example.com')
-            """
-        )
+        with closing(sqlite3.connect(DB_PATH)) as conn, conn:
+            # Drop and recreate users table
+            conn.execute("DROP TABLE IF EXISTS users")
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL
+                )"""
+            )
+            conn.execute(
+                """INSERT INTO users (name, email) VALUES
+                    ('John Doe', 'john.doe@example.com'),
+                    ('Jane Smith', 'jane.smith@example.com'),
+                    ('Alice Johnson', 'alice.johnson@example.com')
+                """
+            )
 
-        # Drop and recreate UserCompensation table
-        conn.execute("DROP TABLE IF EXISTS user_compensation")
-        conn.execute(
-            """CREATE TABLE IF NOT EXISTS user_compensation (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                base_salary REAL NOT NULL,
-                bonus REAL NOT NULL,
-                FOREIGN KEY(user_id) REFERENCES users(id)
-            )"""
-        )
-        conn.execute(
-            """INSERT INTO user_compensation (user_id, base_salary, bonus) VALUES
-                (1, 60000, 5000),
-                (2, 80000, 10000),
-                (3, 120000, 20000)
-            """
-        )
+            # Drop and recreate UserCompensation table
+            conn.execute("DROP TABLE IF EXISTS user_compensation")
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS user_compensation (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    base_salary REAL NOT NULL,
+                    bonus REAL NOT NULL,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )"""
+            )
+            conn.execute(
+                """INSERT INTO user_compensation (user_id, base_salary, bonus) VALUES
+                    (1, 60000, 5000),
+                    (2, 80000, 10000),
+                    (3, 120000, 20000)
+                """
+            )
 
-        conn.execute("DROP TABLE IF EXISTS user_payment_details")
-        conn.execute(
-            """CREATE TABLE IF NOT EXISTS user_payment_details (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                bank_account TEXT NOT NULL,
-                card_number TEXT NOT NULL,
-                FOREIGN KEY(user_id) REFERENCES users(id)
-            )"""
-        )
-        conn.execute(
-            """INSERT INTO user_payment_details (user_id, bank_account, card_number) VALUES
-                (1, '123456789', '4111 1111 1111 1111'),
-                (2, '987654321', '5555 5555 5555 4444'),
-                (3, '456789123', '4242 4242 4242 4242')
-            """
-        )
-        conn.commit()
+            conn.execute("DROP TABLE IF EXISTS user_payment_details")
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS user_payment_details (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    bank_account TEXT NOT NULL,
+                    card_number TEXT NOT NULL,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )"""
+            )
+            conn.execute(
+                """INSERT INTO user_payment_details (user_id, bank_account, card_number) VALUES
+                    (1, '123456789', '4111 1111 1111 1111'),
+                    (2, '987654321', '5555 5555 5555 4444'),
+                    (3, '456789123', '4242 4242 4242 4242')
+                """
+            )
+            conn.commit()
     finally:
         conn.close()
 

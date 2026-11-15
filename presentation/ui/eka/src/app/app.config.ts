@@ -11,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
-          {
+        {
             provide: HTTP_INTERCEPTORS,
             useClass: MsalInterceptor,
             multi: true

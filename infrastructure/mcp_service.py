@@ -1,6 +1,6 @@
 from langgraph.prebuilt import ToolRuntime
 
-from infrastructure.sqlite_db_service import db_router
+from infrastructure.db.sqlite.sqlite_db_service import db_router
 from infrastructure.chroma_db_service import search_kb
 
 class MCPContext:

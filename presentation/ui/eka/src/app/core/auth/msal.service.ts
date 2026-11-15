@@ -1,6 +1,6 @@
 import { MsalGuardConfiguration, MsalInterceptorConfiguration } from "@azure/msal-angular";
 import { BrowserCacheLocation, InteractionType, IPublicClientApplication, PublicClientApplication } from "@azure/msal-browser";
-import { AZURE_CONFIG } from "../../environment";
+import { API_CONFIG, AZURE_CONFIG } from "../../environment";
 
 export function MSALInstanceFactory(): IPublicClientApplication {
   return new PublicClientApplication({
@@ -18,6 +18,7 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
+  protectedResourceMap.set(`${API_CONFIG.BASE_URL}/*`, [AZURE_CONFIG.SCOPE]);
   protectedResourceMap.set("https://graph.microsoft.com/v1.0/me", ["user.read"]);
 
   return {

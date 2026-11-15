@@ -5,14 +5,17 @@ from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.agents.middleware import PIIMiddleware
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from domain.models.agent_context import AgentContext
 from infrastructure.azure_service import get_kv_secret
 from infrastructure.mcp_service import mcp_tools
-from infrastructure.token_service import MAX_RESPONSE_TOKENS, num_tokens_from_query, validate_token_usage
-from application.decorators import cached
+from infrastructure.token_service import (
+    MAX_RESPONSE_TOKENS,
+    trim_conversation_history,
+    validate_token_usage,
+)
 
 load_dotenv()
 
@@ -42,9 +45,9 @@ tools = [
         func=mcp_tools["DBFetch"].run,
         description=(
             "Use this tool to look up structured information from the SQLite database. "
-            "For standard user lookups, call it with {name, role, intent:'user'}. "
-            "For salary or compensation questions, call it with {name, role, intent:'salary'}. "
-            "For payment details or bank details questions, call it with {name, role, intent:'payment'}. "
+            "For standard user lookups, call it with {name, intent:'user'}. "
+            "For salary or compensation questions, call it with {name, intent:'salary'}. "
+            "For payment details or bank details questions, call it with {name, intent:'payment'}. "
             "The tool handles the authorization boundary and returns a response such as {found, name, email, compensation, payment_details, message}."
         )
     ),
@@ -77,8 +80,7 @@ if openai_api_key:
                         ]
                         )
 
-@cached(ttl_seconds=120, maxsize=100)
-def run_agent(query, role="guest"):
+def run_agent(query, role="guest", history=None):
     print(f"Running agent for query: {query} with role: {role}")
 
     if agent is None:
@@ -87,20 +89,26 @@ def run_agent(query, role="guest"):
     validate_token_usage(query, MODEL)
 
     try:
+        history = trim_conversation_history(history or [], query, MODEL)
+        messages = [
+            SystemMessage(content=(
+                "Detect the language the user is asking in and always answer in that same language, "
+                "using its natural vocabulary and script. This applies to every language,"
+                "even if the knowledge-base or database sources are written in another language. "
+                "Translate and explain source material as needed; do not switch to English unless the "
+                "question is in English. If the question mixes languages, answer in the language of its "
+                "main request. Preserve names, numbers, and factual meaning, and do not invent information."
+            ))
+        ]
+        for item in history or []:
+            if item.get("role") == "user":
+                messages.append(HumanMessage(content=item["content"]))
+            elif item.get("role") == "assistant":
+                messages.append(AIMessage(content=item["content"]))
+        messages.append(HumanMessage(content=query))
+
         response = agent.invoke(
-            {
-                "messages": [
-                    SystemMessage(content=(
-                        "Detect the language the user is asking in and always answer in that same language, "
-                        "using its natural vocabulary and script. This applies to every language,"
-                        "even if the knowledge-base or database sources are written in another language. "
-                        "Translate and explain source material as needed; do not switch to English unless the "
-                        "question is in English. If the question mixes languages, answer in the language of its "
-                        "main request. Preserve names, numbers, and factual meaning, and do not invent information."
-                    )),
-                    HumanMessage(content=query),
-                ]
-            },
+            {"messages": messages},
             config={"configurable": {"session_id": str(uuid.uuid4())}},
             context=AgentContext(role=role)
         )

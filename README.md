@@ -106,6 +106,7 @@ AZURE_KEYVAULT_URL=https://your-keyvault.vault.azure.net/
 AZURE_TENANT_ID=your_azure_tenant_id
 AZURE_CLIENT_ID=your_azure_client_id
 AZURE_CLIENT_SECRET=your_azure_client_secret
+AZURE_API_AUDIENCE=your_api_application_client_id
 
 # Optional: Application Configuration
 LOG_LEVEL=INFO
@@ -147,11 +148,14 @@ export class AZURE_CONFIG {
 }
 
 export class API_CONFIG {
-  static BASE_URL: string = 'http://127.0.0.1:8000/';
+  static BASE_URL: string = 'http://127.0.0.1:8000';
+  static API_CLIENT_ID: string = AZURE_CONFIG.CLIENT_ID;
 }
 ```
 
-Register the Angular app as a **Single-page application (SPA)** in Microsoft Entra ID and add `http://localhost:4200` as a redirect URI. The same URI is currently configured for redirect and post-logout in `src/app/core/auth/msal.service.ts`; update those values and the Entra registration together when deploying to another origin. Grant the app the delegated Microsoft Graph `User.Read` permission and consent to it.
+Register the Angular app as a **Single-page application (SPA)** in Microsoft Entra ID and add `http://localhost:4200` as a redirect URI. The same URI is currently configured for redirect and post-logout in `src/app/core/auth/msal.service.ts`; update those values and the Entra registration together when deploying to another origin. Grant the app the delegated Microsoft Graph `User.Read` permission and consent to it. Also expose the delegated API scope `user.access` on the API application and grant the SPA permission to that scope. The frontend requests `api://<API_CLIENT_ID>/user.access`; if the API has its own app registration, set `API_CONFIG.API_CLIENT_ID` to that application ID and set backend `AZURE_API_AUDIENCE` to match the access token's `aud` claim.
+
+The MSAL interceptor uses a wildcard map key for the API URL so requests to nested API paths match under strict URL matching.
 
 The chat route is protected by MSAL. Opening the frontend redirects unauthenticated users to Microsoft sign-in, then returns them to the app. Passwords are entered on Microsoft's sign-in page; this Angular app does not collect or store passwords. Authentication failures navigate to `/login-failed`.
 
@@ -440,7 +444,7 @@ ng serve --port 4300
 Then update the backend CORS configuration and the MSAL redirect URI / Entra SPA redirect registration to use the new port.
 
 #### Issue: Microsoft sign-in does not return to the app
-**Solution**: Confirm the Entra app registration contains the exact frontend redirect URI configured in `src/app/core/auth/msal.service.ts`, and that `TENANT_ID` and `CLIENT_ID` in `src/app/environment.ts` belong to that app. Also verify the delegated Microsoft Graph `User.Read` permission has been granted. Authentication failures are routed to `/login-failed`.
+**Solution**: Confirm the Entra app registration contains the exact frontend redirect URI configured in `src/app/core/auth/msal.service.ts`, and that `TENANT_ID` and `CLIENT_ID` in `src/app/environment.ts` belong to that app. Verify the delegated Microsoft Graph `User.Read` permission and the API's delegated `user.access` scope are granted. Confirm `AZURE_TENANT_ID` and `AZURE_API_AUDIENCE` are configured in the backend. Authentication failures are routed to `/login-failed`.
 
 #### Issue: CORS Error ("Access to XMLHttpRequest has been blocked")
 **Solution 1**: Update `main.py` backend:
@@ -701,11 +705,26 @@ For issues and questions:
 
 - [ ] Add support for additional document formats (DOCX, TXT)
 - [ ] Implement document management UI
-- [ ] Add conversation history and context management
+- [x] Add conversation history and context management
 - [x] Multi-language support
 - [ ] Advanced analytics and usage metrics
 - [ ] Docker containerization
 - [ ] CI/CD pipeline setup
+
+## Conversation History
+
+The API validates Microsoft Entra bearer access tokens and stores one persistent
+conversation per signed-in user, identified by the immutable tenant and object
+ID claims. The assistant receives up to the latest 10 exchanges as context,
+dropping older turns as needed to stay within the token limit. Use **Clear
+history** in the chat to delete that user's stored messages.
+
+The protected endpoints are `GET /conversations/me/messages` and
+`DELETE /conversations/me/messages`. Conversation ownership is determined by
+the verified access token; the browser cannot select another user's identity.
+Existing history created before user ownership was added is left unassigned and
+is not exposed to signed-in users. Configure the Entra API scope and the
+backend's `AZURE_API_AUDIENCE` before using the protected chat endpoints.
 
 ## Token Management
 

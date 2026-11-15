@@ -8,6 +8,18 @@
   font-family: "Segoe UI", Roboto, Arial, sans-serif;
 }
 
+.history-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-message {
+  color: #b42318;
+  margin: 0;
+}
+
 /* Messages area */
 .messages {
   border: 1px solid #d0d7de;

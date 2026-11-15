@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from presentation.api.controllers.ask_controller import ask_router
 from presentation.api.controllers.kb_controller import kb_router
 from presentation.api.controllers.token_controller import token_router
+from presentation.api.controllers.conversation_controller import conversation_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +15,7 @@ app = FastAPI(
 app.include_router(ask_router)
 app.include_router(kb_router)
 app.include_router(token_router)
+app.include_router(conversation_router)
 
 
 # Allow your Angular dev server (default: http://localhost:4200)
