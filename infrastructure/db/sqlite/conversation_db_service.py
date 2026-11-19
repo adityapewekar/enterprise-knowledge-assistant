@@ -2,7 +2,7 @@ from pathlib import Path
 from contextlib import closing
 import sqlite3
 
-DB_PATH = Path(__file__).resolve().parent.parent / "eka.db"
+DB_PATH = Path(__file__).resolve().parent / "_eka.db"
 MAX_CONTEXT_TURNS = 10
 
 def _init_db():
@@ -68,3 +68,17 @@ def clear_conversation_by_user(user_id: str):
             "DELETE FROM conversation_messages WHERE user_id = ?",
             (user_id,),
         )
+
+
+class SqliteConversationRepository:
+    def get_conversation(self, user_id: str) -> list[dict[str, str]]:
+        return get_conversation_by_user(user_id)
+
+    def get_context(self, user_id: str) -> list[dict[str, str]]:
+        return get_context_by_user(user_id)
+
+    def save_exchange(self, user_id: str, user_message: str, assistant_message: str) -> None:
+        save_conversation_exchange(user_id, user_message, assistant_message)
+
+    def clear_conversation(self, user_id: str) -> None:
+        clear_conversation_by_user(user_id)

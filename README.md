@@ -1,12 +1,12 @@
 # Enterprise Knowledge Assistant
 
-An intelligent knowledge management system that leverages OpenAI and LangGraph to provide an interactive question-answering interface for enterprise documents. This application allows users to upload PDFs, build a searchable knowledge base, and query it using natural language.
+An intelligent knowledge management system that leverages OpenAI and LangGraph to provide an interactive question-answering interface for enterprise documents. This application allows users to upload PDFs, DOCX, TXT, legacy PPT/PPTX, and raster images, build a searchable knowledge base, and query it using natural language.
 
 ## Features
 
 - **AI-Powered Q&A**: Ask natural language questions about your documents using OpenAI's GPT models
 - **Vector Database**: Efficient document retrieval using ChromaDB for semantic search
-- **PDF Support**: Extract and index content from PDF documents
+- **Document Uploads**: Extract and index content from PDF, DOCX, TXT, PPT/PPTX, and raster images
 - **LangGraph Workflow**: Sophisticated multi-step reasoning using LangGraph agents
 - **REST API**: FastAPI-based backend for seamless integration
 - **CORS Support**: Pre-configured for Angular frontend integration
@@ -16,6 +16,18 @@ An intelligent knowledge management system that leverages OpenAI and LangGraph t
 - **Usage Limits**: Set daily, monthly, and cost-based limits per user role
 - **Analytics Dashboard**: Comprehensive token usage statistics and trends
 - **Multilingual Q&A**: Automatically detect the language of a question and answer in that same language
+
+## Backend Architecture
+
+The backend follows a layered, dependency-inverted structure:
+
+- `domain/` contains core contracts (ports) and domain models; it does not depend on frameworks or infrastructure.
+- `application/services/` contains use cases and coordinates work through domain ports.
+- `infrastructure/` implements those ports with SQLite, ChromaDB, LangGraph, Azure, and PyMuPDF adapters.
+- `presentation/api/` contains FastAPI routes, request DTOs, authentication dependencies, and the adapter wiring used to construct application services.
+- `main.py` is the ASGI entry point and registers the API routers.
+
+For new behavior, keep HTTP concerns in `presentation/`, orchestration in `application/`, and vendor or persistence details in `infrastructure/`. Define an inward-facing port under `domain/` when an application use case needs an external capability, then supply its adapter through the API dependency wiring.
 
 ## Prerequisites
 
@@ -87,7 +99,11 @@ This will install all required packages including:
 - OpenAI (AI models)
 - ChromaDB (vector database)
 - PyMuPDF (PDF processing)
+- python-docx, python-pptx, and olefile (Office document processing)
+- Pillow and pytesseract (image loading and OCR integration)
 - Azure libraries (optional, for enterprise security)
+
+Image OCR requires the Tesseract executable to be installed separately and available on `PATH`. For example, install Tesseract OCR for Windows and restart the terminal so the executable is visible. Uploads require an authenticated user and are indexed for the `admin` and `employee` roles (never `guest`); image uploads fail with HTTP 503 if Tesseract is missing or cannot process the image.
 
 #### 4. Configure Environment Variables
 
@@ -559,8 +575,8 @@ The current Angular app keeps its API base URL, Entra tenant ID, and client ID i
 
 2. **Upload Documents**:
    - Click on the "Upload" or "Knowledge Base" section
-   - Select PDF files to upload
-   - The documents will be processed and indexed
+   - Select PDF, DOCX, TXT, PPT/PPTX, or common raster image files to upload
+   - The documents will be processed and indexed for authenticated administrators and employees
 
 3. **Ask Questions**:
    - Use the search/query interface
@@ -579,8 +595,9 @@ When the backend is running, visit:
 
 **Upload a PDF**:
 ```bash
-curl -X POST "http://localhost:8000/kb/upload" \
+curl -X POST "http://localhost:8000/upload_doc" \
   -H "accept: application/json" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -F "file=@document.pdf"
 ```
 
@@ -703,7 +720,7 @@ For issues and questions:
 
 ## Roadmap
 
-- [ ] Add support for additional document formats (DOCX, TXT)
+- [x] Add support for additional document formats (DOCX, TXT)
 - [ ] Implement document management UI
 - [x] Add conversation history and context management
 - [x] Multi-language support

@@ -3,6 +3,11 @@ OpenAI
 tiktoken
 
 PyMuPDF
+python-docx
+python-pptx
+olefile
+Pillow
+pytesseract
 dotenv
 
 langgraph

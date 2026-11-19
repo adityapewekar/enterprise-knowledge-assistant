@@ -33,19 +33,49 @@
   </div>
 
   <div class="kb-update">
-<mat-form-field appearance="outline">
-  <mat-label>Select Roles</mat-label>
-  <mat-select [(value)]="selectedRoleKB" multiple>
-    <mat-option *ngFor="let role of roles" [value]="role">
-      {{ role }}
-    </mat-option>
-  </mat-select>
+    <mat-form-field appearance="outline">
+      <mat-label>Select Roles</mat-label>
+      <mat-select [(value)]="selectedRoleKB" multiple>
+        <mat-option *ngFor="let role of roles" [value]="role">
+          {{ role }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="document-field">
+  <mat-label>Document</mat-label>
+  <input
+    matInput
+    [value]="selectedDocument?.name ?? ''"
+    placeholder="Choose a document"
+    readonly
+  />
+  <button
+    mat-button
+    matSuffix
+    type="button"
+    (click)="fileInput.click()"
+    [disabled]="isUploading"
+  >
+    Choose file
+  </button>
 </mat-form-field>
 
-  <mat-form-field appearance="outline" class="kb-textarea">
-    <mat-label>Update KB article</mat-label>
-    <textarea matInput [(ngModel)]="KbUpdate"></textarea>
-  </mat-form-field>
-  <button mat-raised-button color="primary" (click)="updateKB()">Update KB</button>
+<input
+  #fileInput
+  type="file"
+  hidden
+  accept=".pdf,.docx,.txt,.ppt,.pptx,.bmp,.gif,.jpeg,.jpg,.png,.tif,.tiff,.webp"
+  (change)="onDocumentSelected($event)"
+  [disabled]="isUploading"
+/>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="uploadDocument()"
+      [disabled]="!selectedDocument || !selectedRoleKB.length || isUploading"
+    >
+      {{ isUploading ? 'Uploading...' : 'Upload document' }}
+    </button>
   </div>
 </div>

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from application.decorators import cached, require_role
 
-DB_PATH = Path(__file__).resolve().parent.parent / "eka.db"
+DB_PATH = Path(__file__).resolve().parent / "_eka.db"
 
 
 def _init_db():

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from infrastructure.token_service import MAX_RESPONSE_TOKENS
+from application.services.token_service import MAX_RESPONSE_TOKENS
 
 
 token_router = APIRouter()

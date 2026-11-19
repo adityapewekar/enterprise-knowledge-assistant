@@ -11,7 +11,7 @@ from langchain_openai import ChatOpenAI
 from domain.models.agent_context import AgentContext
 from infrastructure.azure_service import get_kv_secret
 from infrastructure.mcp_service import mcp_tools
-from infrastructure.token_service import (
+from application.services.token_service import (
     MAX_RESPONSE_TOKENS,
     trim_conversation_history,
     validate_token_usage,
@@ -160,3 +160,8 @@ def run_agent(query, role="guest", history=None):
     except Exception as exc:
         print(exc)
         return {"error": f"Agent execution failed: {exc}"}
+
+
+class LangGraphAgent:
+    def run(self, query: str, role: str, history: list[dict[str, str]]) -> dict:
+        return run_agent(query, role, history)

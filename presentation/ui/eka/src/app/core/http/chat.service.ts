@@ -21,10 +21,13 @@ export class ChatService{
     }
 
 
-    updateKB(kbUpdate: string, roles: string[]):Observable<any> {
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json',
-        });
-        return this.http.post(this.apiUrl+"update_kb_article", { article: kbUpdate, roles }, { headers });
+    uploadDocument(file: File, roles: string[]): Observable<{ parsed_text: string; indexed: boolean }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        roles.forEach(role => formData.append('roles', role));
+        return this.http.post<{ parsed_text: string; indexed: boolean }>(
+            this.apiUrl + 'upload_doc',
+            formData
+        );
     }
 }

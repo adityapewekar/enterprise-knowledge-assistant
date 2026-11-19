@@ -7,7 +7,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ConversationMessage, ConversationService } from '../../../core/http/conversation.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-chat',
@@ -18,7 +20,8 @@ import { ConversationMessage, ConversationService } from '../../../core/http/con
     MatSelectModule,
     MatOptionModule,
     MatInputModule,
-    MatButtonModule  
+    MatButtonModule,
+    MatSnackBarModule
   ],
   templateUrl: './chat.page.html',
   styleUrl: './chat.page.css',
@@ -26,18 +29,20 @@ import { ConversationMessage, ConversationService } from '../../../core/http/con
 export class ChatPage implements OnInit {
   messages = signal<ConversationMessage[]>([]);
   userInput="";
-  KbUpdate="";
   selectedRole:string="employee";
   selectedRoleKB:string[]=[];
+  selectedDocument: File | null = null;
   roles: string[] = ['employee', 'admin'];
   isSending = false;
+  isUploading = false;
   isLoadingHistory = true;
   historyError = '';
   requestError = '';
 
 
   constructor(private askService: ChatService,
-                      private conversationService: ConversationService
+                      private conversationService: ConversationService,
+                      private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -96,13 +101,45 @@ export class ChatPage implements OnInit {
     });
   }
 
-  updateKB(){
-    const kbText= this.KbUpdate.trim();
-    if(!kbText) return;
-    
-    this.askService.updateKB(kbText,this.selectedRoleKB).subscribe(res=>{
-      this.KbUpdate = '';
+  onDocumentSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.selectedDocument = input.files?.[0] ?? null;
+    this.requestError = '';
+  }
+
+  uploadDocument() {
+    if (!this.selectedDocument || !this.selectedRoleKB.length || this.isUploading) return;
+
+    const file = this.selectedDocument;
+    this.isUploading = true;
+    this.requestError = '';
+
+    this.askService.uploadDocument(file, this.selectedRoleKB).subscribe({
+      next: result => {
+        const message = result.indexed
+          ? `${file.name} uploaded and indexed successfully.`
+          : `${file.name} uploaded, but no text was available to index.`;
+        this.showUploadNotification(message);
+        this.selectedDocument = null;
+        this.isUploading = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.showUploadNotification(
+          error.error?.detail || 'The document could not be uploaded. Please try again.',
+          true
+        );
+        this.isUploading = false;
+      }
     });
   }
 
+  private showUploadNotification(message: string, isError = false) {
+    this.snackBar.open(message, 'Dismiss', {
+      duration: 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      politeness: isError ? 'assertive' : 'polite',
+      panelClass: isError ? 'upload-toast-error' : 'upload-toast-success'
+    });
+  }
 }

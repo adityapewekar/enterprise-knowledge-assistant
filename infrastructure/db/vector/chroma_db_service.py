@@ -126,13 +126,18 @@ def search_kb(query, role="guest"):
             "message": "No exact match found. Suggestions based on query provided." if suggestions else "No relevant KB result."
         }
 
-def update_kb_article(request):
+def update_kb_article(article: str, roles: list[str]):
     if not client or not db:
         return {"success": False, "message": "Knowledge base is unavailable because OpenAI credentials are not configured."}
 
     new_doc = Document(
-        page_content=request.article,
-        metadata={"roles": request.roles}
+        page_content=article,
+        metadata={"roles": roles}
     )
     db.add_documents([new_doc])
     return {"success": True, "message": "Knowledge base updated successfully."}
+
+
+class ChromaKnowledgeBase:
+    def update_article(self, article: str, roles: list[str]) -> dict:
+        return update_kb_article(article, roles)

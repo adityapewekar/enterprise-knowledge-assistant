@@ -5,8 +5,8 @@ import jwt
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt.exceptions import PyJWKClientError
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError
 
 load_dotenv()
 

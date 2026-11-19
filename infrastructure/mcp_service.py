@@ -1,7 +1,7 @@
 from langgraph.prebuilt import ToolRuntime
 
 from infrastructure.db.sqlite.sqlite_db_service import db_router
-from infrastructure.chroma_db_service import search_kb
+from infrastructure.db.vector.chroma_db_service import search_kb
 
 class MCPContext:
     def __init__(self, name, funv):

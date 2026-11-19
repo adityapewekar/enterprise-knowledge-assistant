@@ -90,8 +90,13 @@
   min-width: 180px;
 }
 
-.kb-update .kb-textarea {
+.kb-update .document-field {
   flex: 2;
+  min-width: 260px;
+}
+
+.document-field input[type="file"] {
+  width: 100%;
 }
 
 /* Buttons */

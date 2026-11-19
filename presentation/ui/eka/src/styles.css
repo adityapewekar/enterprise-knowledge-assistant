@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+.upload-toast-success {
+  --mat-snack-bar-container-color: #067647;
+  --mat-snack-bar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.upload-toast-error {
+  --mat-snack-bar-container-color: #b42318;
+  --mat-snack-bar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
