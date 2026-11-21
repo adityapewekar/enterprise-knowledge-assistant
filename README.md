@@ -100,10 +100,10 @@ This will install all required packages including:
 - ChromaDB (vector database)
 - PyMuPDF (PDF processing)
 - python-docx, python-pptx, and olefile (Office document processing)
-- Pillow and pytesseract (image loading and OCR integration)
+- Pillow and Azure AI Document Intelligence (image loading and OCR)
 - Azure libraries (optional, for enterprise security)
 
-Image OCR requires the Tesseract executable to be installed separately and available on `PATH`. For example, install Tesseract OCR for Windows and restart the terminal so the executable is visible. Uploads require an authenticated user and are indexed for the `admin` and `employee` roles (never `guest`); image uploads fail with HTTP 503 if Tesseract is missing or cannot process the image.
+Image OCR uses the Azure AI Document Intelligence `prebuilt-read` model. Set `AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT` to your Document Intelligence endpoint and `AZURE_DOCUMENT_INTELLIGENCE_KEY` to its API key in the process environment or project `.env` file. No local Tesseract installation is needed. Uploads require an authenticated user and are indexed for the `admin` and `employee` roles (never `guest`); image uploads fail with HTTP 503 if OCR is not configured or the service cannot process the image.
 
 #### 4. Configure Environment Variables
 
@@ -123,6 +123,8 @@ AZURE_TENANT_ID=your_azure_tenant_id
 AZURE_CLIENT_ID=your_azure_client_id
 AZURE_CLIENT_SECRET=your_azure_client_secret
 AZURE_API_AUDIENCE=your_api_application_client_id
+AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://your-resource.cognitiveservices.azure.com/
+AZURE_DOCUMENT_INTELLIGENCE_KEY=your_document_intelligence_api_key
 
 # Optional: Application Configuration
 LOG_LEVEL=INFO
@@ -721,7 +723,7 @@ For issues and questions:
 ## Roadmap
 
 - [x] Add support for additional document formats (DOCX, TXT)
-- [ ] Implement document management UI
+- [x] Implement document management UI
 - [x] Add conversation history and context management
 - [x] Multi-language support
 - [ ] Advanced analytics and usage metrics

@@ -7,7 +7,7 @@ python-docx
 python-pptx
 olefile
 Pillow
-pytesseract
+azure-ai-documentintelligence
 dotenv
 
 langgraph

@@ -1,4 +1,5 @@
 from io import BytesIO
+import os
 import struct
 from zipfile import BadZipFile
 
@@ -9,10 +10,9 @@ from docx import Document
 from PIL import Image, UnidentifiedImageError
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-import pytesseract
-from pytesseract import TesseractError, TesseractNotFoundError
 
 from domain.document_errors import DocumentExtractionError, MalformedDocumentError, UnsupportedDocumentTypeError
+from infrastructure.azure_service import get_content_from_di
 
 
 SUPPORTED_EXTENSIONS = {
@@ -170,12 +170,10 @@ class MultiFormatDocumentParser:
         try:
             with Image.open(BytesIO(content)) as image:
                 image.load()
-                return pytesseract.image_to_string(image)
-        except (TesseractNotFoundError, TesseractError) as exc:
-            raise DocumentExtractionError("Tesseract OCR is unavailable or failed to process the image.") from exc
         except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError) as exc:
             raise MalformedDocumentError("The uploaded image is invalid or unreadable.") from exc
 
+        return get_content_from_di(content)
 
 class PyMuPDFDocumentParser(MultiFormatDocumentParser):
     """Compatibility name for the parser configured by the API."""
